@@ -1536,9 +1536,22 @@ def construir_centroides_por_municipio(geojson_col):
 
 def consultar_api(params):
     url = f"{BASE_API}?{urlencode(params)}"
-    resp = requests.get(url, timeout=60)
-    resp.raise_for_status()
-    return resp.json()
+    try:
+        resp = requests.get(url, timeout=60)
+        resp.raise_for_status()
+        return resp.json()
+
+    except requests.exceptions.HTTPError as e:
+        st.warning(f"⚠️ Error HTTP en la API: {e}")
+        return []
+
+    except requests.exceptions.Timeout:
+        st.warning("⏱️ La API tardó demasiado en responder.")
+        return []
+
+    except requests.exceptions.RequestException as e:
+        st.warning(f"❌ Error de conexión con la API: {e}")
+        return []
 
 @st.cache_data(show_spinner=False, ttl=300)
 def consultar_api_todas_paginas(params, page_size: int = 1000):
@@ -1588,7 +1601,8 @@ def cargar_datos_departamentos_api():
     data_depto = consultar_api_todas_paginas(params_depto)
     df_depto = pd.DataFrame(data_depto)
     if df_depto.empty:
-        raise ValueError(API_DEPTO_EMPTY_TEXT)
+        st.warning("⚠️ No se pudieron cargar datos de la API.")
+        return pd.DataFrame(), pd.DataFrame()
     df_depto["Codigo_DANE"] = pd.to_numeric(df_depto["cod_depto"], errors="coerce")
     df_depto["Departamento"] = df_depto["departamento"].astype(str).str.upper().str.strip()
     df_depto["Casos"] = pd.to_numeric(df_depto["casos"], errors="coerce").fillna(0).astype(int)
