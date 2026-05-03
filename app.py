@@ -1,6 +1,6 @@
 import json
 from urllib.parse import urlencode
-
+import logging
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -1541,16 +1541,8 @@ def consultar_api(params):
         resp.raise_for_status()
         return resp.json()
 
-    except requests.exceptions.HTTPError as e:
-        st.warning(f"⚠️ Error HTTP en la API: {e}")
-        return []
-
-    except requests.exceptions.Timeout:
-        st.warning("⏱️ La API tardó demasiado en responder.")
-        return []
-
     except requests.exceptions.RequestException as e:
-        st.warning(f"❌ Error de conexión con la API: {e}")
+        logging.error(f"Error API: {e}")
         return []
 
 @st.cache_data(show_spinner=False, ttl=300)
